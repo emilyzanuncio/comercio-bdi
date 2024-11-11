@@ -1,8 +1,6 @@
 import psycopg2
-import os
 import tkinter as tk
-from tkinter.ttk import Style
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, StringVar
 
 # Conectando ao banco de dados
 conn = psycopg2.connect(host='localhost',port='5432',database='trabalho final',user='postgres',password='Aquaphor')
@@ -71,22 +69,39 @@ def inserir_cliente():
     
     messagebox.showinfo("Sucesso", "Cliente cadastrado com sucesso!")
 
-def inserir_produto(nome, valor_venda, estoque):
+def inserir_produto():
+    nome = nome_produto_entrada.get()
+    valor_venda = valor_entrada.get()
+    estoque = estoque_entrada.get()
+    
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO produtos(nome, valor_venda, estoque) VALUES(%s, %s, %s);
     """, (nome, valor_venda, estoque))
     conn.commit()
     cursor.close()
+    
+    nome_produto_entrada.delete(0, tk.END)
+    valor_entrada.delete(0, tk.END)
+    estoque_entrada.delete(0, tk.END)
+    
+    messagebox.showinfo("Sucesso", "Produto cadastrado com sucesso!")
 
-def inserir_venda(id_cliente, id_produto, quantidade, valor_total, data_venda, forma_pagamento):
+def inserir_venda():
+    id_cliente = ID_cliente.get()
+    id_produto = ID_produto.get()
+    quantidade = int(qtd_produto.get())
+    valor_total = valor_total_venda.get()
+    data_venda = data.get()
+    forma_pagamento = forma_de_pagamento.get()
+    
     cursor = conn.cursor()
     try:
         # Verificando se há estoque suficiente
         cursor.execute("SELECT estoque FROM produtos WHERE id_produto = %s;", (id_produto,))
         estoque_atual = cursor.fetchone()[0]
         if estoque_atual < quantidade:
-            print("Estoque insuficiente para realizar a venda.")
+            messagebox.showerror("Erro", "Estoque insuficiente para realizar a venda.")
             return
 
         # Inserindo a venda
@@ -100,14 +115,23 @@ def inserir_venda(id_cliente, id_produto, quantidade, valor_total, data_venda, f
         """, (quantidade, id_produto))
 
         conn.commit()
-        print("Venda cadastrada com sucesso!")
+        messagebox.showinfo("Sucesso", "Venda cadastrada com sucesso!")
     except Exception as e:
         conn.rollback()
-        print(f"Erro ao cadastrar venda: {e}")
+        messagebox.showerror("Erro", f"Ocorreu um erro ao realizar a venda: {e}")
     finally:
         cursor.close()
+        
+    ID_cliente.delete(0, tk.END)
+    ID_produto.delete(0, tk.END)
+    qtd_produto.delete(0, tk.END)
+    valor_total_venda.delete(0, tk.END)
+    data.delete(0, tk.END)
+    forma_de_pagamento.set('Escolha uma opção')
 
-def atualizar_estoque(id_produto, input_estoque):
+def atualizar_estoque():
+    id_produto = ID_produto_estoque.get()
+    input_estoque = entrada_estoque.get()
 
     cursor = conn.cursor()
     cursor.execute("""
@@ -115,9 +139,14 @@ def atualizar_estoque(id_produto, input_estoque):
     """, (input_estoque, id_produto))
     conn.commit()
     cursor.close()
+    
+    ID_produto_estoque.delete(0, tk.END)
+    entrada_estoque.delete(0, tk.END)
+    
+    messagebox.showinfo("Sucesso", "Estoque atualizado com sucesso!")
 
 
-# Mostrando os clientes cadastrados
+# Mostrando todos clientes cadastrados
 def mostrar_clientes():
     cursor = conn.cursor()
     cursor.execute("""
@@ -145,7 +174,6 @@ def mostrar_vendas():
     cursor.close()
     return vendas
 
-
 def main():
     # Criando as tabelas
     criar_tabela_clientes()
@@ -160,33 +188,125 @@ if __name__ == '__main__':
 janela_principal = tk.Tk()
 janela_principal.title('Comercio UCDBuy')
 janela_principal.geometry('300x500')
-janela_principal.configure(bg='gray')
+janela_principal.configure(bg='#cca7dd')
 
 #Abre uma nova janela de cadastro de clientes
 def janela_cadastro_cliente():
     global nome_cliente_entrada, telefone_entrada
     
     nova_janela = tk.Toplevel(janela_principal)
-    nova_janela.title("Cadastro de Cliente")
+    nova_janela.title('Cadastro de Cliente')
+    nova_janela.geometry('300x300') 
     
-    tk.Label(nova_janela, text="Nome").pack(pady=5)
+    tk.Label(nova_janela, text='Nome').pack(pady=5)
     nome_cliente_entrada = tk.Entry(nova_janela, width=30)
     nome_cliente_entrada.pack(pady=5)
     
-    tk.Label(nova_janela, text="Telefone").pack(pady=5)
+    tk.Label(nova_janela, text='Telefone').pack(pady=5)
     telefone_entrada = tk.Entry(nova_janela, width=30)
     telefone_entrada.pack(pady=5)
         
-    bnt_enviar = tk.Button(nova_janela, text='Enviar', font=('Arial', 12, 'bold'), command=inserir_cliente)
+    bnt_enviar = tk.Button(nova_janela, text='Enviar', command=inserir_cliente)
     bnt_enviar.pack(pady=10)
         
     bnt_fechar = tk.Button(nova_janela, text="Fechar", command=nova_janela.destroy)
     bnt_fechar.pack(pady=10)
 
+#Abre uma nova janela de cadastro de produtos
+def janela_cadastrar_produtos():
+    global nome_produto_entrada, valor_entrada, estoque_entrada
+    
+    nova_janela = tk.Toplevel(janela_principal)
+    nova_janela.title = ('Cadastro de Produtos')
+    nova_janela.geometry('300x300')
+    
+    tk.Label(nova_janela, text='Nome do Produto').pack(pady=5)
+    nome_produto_entrada = tk.Entry(nova_janela, width=30)
+    nome_produto_entrada.pack(pady=5)
+    
+    tk.Label(nova_janela, text='Valor').pack(pady=5)
+    valor_entrada = tk.Entry(nova_janela, width=30)
+    valor_entrada.pack(pady=5)
+    
+    tk.Label(nova_janela, text='Quantidade a adicionar').pack(pady=5)
+    estoque_entrada = tk.Entry(nova_janela, width=30)
+    estoque_entrada.pack(pady=5)
+    
+    bnt_enviar = tk.Button(nova_janela, text='Enviar', command=inserir_produto)
+    bnt_enviar.pack(pady=10)
+        
+    bnt_fechar = tk.Button(nova_janela, text="Fechar", command=nova_janela.destroy)
+    bnt_fechar.pack(pady=10)
+    
+#Abre uma nova janela de cadastro de vendas   
+def janela_cadastrar_vendas():
+    global ID_cliente, ID_produto, qtd_produto, valor_total_venda, data, forma_de_pagamento
+    
+    nova_janela = tk.Toplevel(janela_principal)
+    nova_janela.title('Cadastro de Vendas')
+    nova_janela.geometry('300x500') 
+    
+    tk.Label(nova_janela, text='ID Cliente').pack(pady=5)
+    ID_cliente = tk.Entry(nova_janela, width=30)
+    ID_cliente.pack(pady=5)
+    
+    tk.Label(nova_janela, text='ID Produto').pack(pady=5)
+    ID_produto = tk.Entry(nova_janela, width=30)    
+    ID_produto.pack(pady=5)
+     
+    tk.Label(nova_janela, text='Quantidade').pack(pady=5)
+    qtd_produto = tk.Entry(nova_janela, width=30)
+    qtd_produto.pack(pady=5)
+    
+    tk.Label(nova_janela, text='Valor total da compra').pack(pady=5)
+    valor_total_venda = tk.Entry(nova_janela, width=30)
+    valor_total_venda.pack(pady=5)
+      
+    tk.Label(nova_janela, text='Data de Venda (DD/MM/AA)').pack(pady=5)
+    data = tk.Entry(nova_janela, width=30)
+    data.pack(pady=5)
+    
+    tk.Label(nova_janela, text='Forma de pagamento').pack(pady=5)
+    forma_de_pagamento = StringVar(nova_janela)
+    forma_de_pagamento.set('Escolha uma opção') 
+    opcoes = ['Dinheiro', 'Crédito', 'Débito']
+    
+    menu_opcoes = tk.OptionMenu(nova_janela, forma_de_pagamento, *opcoes)
+    menu_opcoes.pack(pady=10)
+    
+    bnt_enviar = tk.Button(nova_janela, text='Enviar', command=inserir_venda)
+    bnt_enviar.pack(pady=10)
+        
+    bnt_fechar = tk.Button(nova_janela, text='Fechar', command=nova_janela.destroy)
+    bnt_fechar.pack(pady=10)
+       
+#Abre uma nova janela de atualização de estoque
+def janela_atualizacao_estoque():
+    global ID_produto_estoque, entrada_estoque
+    
+    nova_janela = tk.Toplevel(janela_principal)
+    nova_janela.title('Atualização de Estoque')
+    nova_janela.geometry('300x300') 
+    
+    tk.Label(nova_janela, text='ID Produto').pack(pady=5)
+    ID_produto_estoque = tk.Entry(nova_janela, width=30)   
+    ID_produto_estoque.pack(pady=5)
+    
+    tk.Label(nova_janela, text='Quantidade').pack(pady=5)
+    entrada_estoque = tk.Entry(nova_janela, width=30)
+    entrada_estoque.pack(pady=5)
+    
+    bnt_enviar = tk.Button(nova_janela, text='Enviar', command=atualizar_estoque)
+    bnt_enviar.pack(pady=10)
+        
+    bnt_fechar = tk.Button(nova_janela, text='Fechar', command=nova_janela.destroy)
+    bnt_fechar.pack(pady=10)
 
+#Abre uma nova janela para consulta de todos os clientes
 def janela_consultar_clientes():
     nova_janela = tk.Toplevel(janela_principal)
-    nova_janela.title("Consultar Clientes")
+    nova_janela.title('Consultar Clientes')
+    nova_janela.geometry('400x300')
     
     tree = ttk.Treeview(nova_janela, columns=('Nome', 'Telefone'))
     tree.heading('#0', text='ID')
@@ -195,47 +315,114 @@ def janela_consultar_clientes():
     tree.column('#0', width=50)
     tree.column('#1', width=150)
     tree.column('#2', width=100)
-    tree.pack()
+    tree.pack(fill='both', expand=True)
     
     clientes = mostrar_clientes()
 
     for cliente in clientes:
         tree.insert('', 'end', text=cliente[0], values=(cliente[1], cliente[2]))
     
-    fechar_btn = tk.Button(nova_janela, text="Fechar", command=nova_janela.destroy)
+    fechar_btn = tk.Button(nova_janela, text='Fechar', command=nova_janela.destroy)
     fechar_btn.pack(pady=10)
 
+#Janela para consultar os produtos
+def janela_consultar_produtos():
+    nova_janela = tk.Toplevel(janela_principal)
+    nova_janela.title('Consultar Estoque de Produtos')
+    nova_janela.geometry('400x300')
+    
+    tree = ttk.Treeview(nova_janela, columns=('Nome', 'Valor', 'Estoque'))
+    tree.heading('#0', text='ID')
+    tree.heading('#1', text='Nome')
+    tree.heading('#2', text='Valor')
+    tree.heading('#3', text='Estoque')
+    tree.column('#0', width=50)
+    tree.column('#1', width=100)
+    tree.column('#2', width=100)
+    tree.column('#3', width=100)
+    tree.pack(fill='both', expand=True)
+    
+    produtos = mostrar_produtos()
 
-#cadastrar cliente
+    for produto in produtos:
+        tree.insert('', 'end', text=produto[0], values=(produto[1], produto[2], produto[3]))
+    
+    fechar_btn = tk.Button(nova_janela, text='Fechar', command=nova_janela.destroy)
+    fechar_btn.pack(pady=10)
+    
+#Janela para consultar as vendas
+def janela_consultar_vendas():
+    nova_janela = tk.Toplevel(janela_principal)
+    nova_janela.title('Consultar Vendas')
+    nova_janela.geometry('800x300')
+    
+    tree = ttk.Treeview(nova_janela, columns=('ID Cliente', 'ID Produto', 'Quantidade', 'Valor Total', 'Data Venda', 'Forma Pagamento'))
+    tree.heading('#0', text='ID')
+    tree.heading('#1', text='ID Cliente')
+    tree.heading('#2', text='ID Produto')
+    tree.heading('#3', text='Quantidade')
+    tree.heading('#4', text='Valor Total')
+    tree.heading('#5', text='Data Venda')
+    tree.heading('#6', text='Forma Pagamento')
+    tree.column('#0', width=50)
+    tree.column('#1', width=100)
+    tree.column('#2', width=100)
+    tree.column('#3', width=100)
+    tree.column('#4', width=100)
+    tree.column('#5', width=100)
+    tree.column('#6', width=120)
+    tree.pack(fill='both', expand=True)
+    
+    vendas = mostrar_vendas()
+
+    for venda in vendas:
+        tree.insert('', 'end', text=venda[0], values=(venda[1], venda[2], venda[3], venda[4], venda[5], venda[6]))
+    
+    fechar_btn = tk.Button(nova_janela, text='Fechar', command=nova_janela.destroy)
+    fechar_btn.pack(pady=10)
+
+#Cadastrar cliente
 bnt_cadastrar_cliente = tk.Button(janela_principal, text='Cadastrar Cliente', font=('Arial', 12, 'bold'), 
-                                    height=5, width=20, bg='#492884', cursor='hand2',
+                                    height=3, width=20, bg='#492884', cursor='hand2',
                                     activebackground='#71579e', command=janela_cadastro_cliente)
-bnt_cadastrar_cliente.pack()
+bnt_cadastrar_cliente.pack(pady=10 )
 
 
-#Cadastrar Produto
+#Cadastrar produto
 bnt_cadatrar_produto = tk.Button(janela_principal, text='Cadastrar Produto', font=('Arial', 12, 'bold'),
-                                    height=5, width=20, bg='#492884', cursor='hand2',
-                                    activebackground='#71579e')
-bnt_cadatrar_produto.pack()
+                                    height=3, width=20, bg='#492884', cursor='hand2',
+                                    activebackground='#71579e', command=janela_cadastrar_produtos)
+bnt_cadatrar_produto.pack(pady=10 )
 
-#Cadastrar Venda
+#Cadastrar venda
 bnt_cadastrar_venda = tk.Button(janela_principal, text='Cadastrar Venda', font=('Arial', 12, 'bold'),
-                                    height=5, width=20, bg='#492884', cursor='hand2',
-                                    activebackground='#71579e')
-bnt_cadastrar_venda.pack()
+                                    height=3, width=20, bg='#492884', cursor='hand2',
+                                    activebackground='#71579e', command=janela_cadastrar_vendas)
+bnt_cadastrar_venda.pack(pady=10 )
 
-#Atualizar Estoque
+#Atualizar estoque
 bnt_atualizar_estoque = tk.Button(janela_principal, text='Atualizar Estoque', font=('Arial', 12, 'bold'),
-                                    height=5, width=20, bg='#492884', cursor='hand2',
-                                    activebackground='#71579e')
-bnt_atualizar_estoque.pack()
+                                    height=3, width=20, bg='#492884', cursor='hand2',
+                                    activebackground='#71579e', command=janela_atualizacao_estoque)
+bnt_atualizar_estoque.pack(pady=10 )
 
-#Consultar Clientes
+#Consultar todos os clientes
 bnt_consultar_clientes = tk.Button(janela_principal, text='Consultar Clientes', font=('Arial', 12, 'bold'),
-                                    height=5, width=20, bg='#492884', cursor='hand2',
+                                    height=3, width=20, bg='#492884', cursor='hand2',
                                     activebackground='#71579e', command=janela_consultar_clientes)
-bnt_consultar_clientes.pack()
+bnt_consultar_clientes.pack(pady=10 )
 
+#Consultar todos os produtos
+bnt_consultar_estoque = tk.Button(janela_principal, text='Consultar Estoque', font=('Arial', 12, 'bold'),
+                                    height=3, width=20, bg='#492884', cursor='hand2',
+                                    activebackground='#71579e', command=janela_consultar_produtos)
+bnt_consultar_estoque.pack(pady=10 )
 
+#Consultar todas as vendas
+bnt_consultar_vendas = tk.Button(janela_principal, text='Consultar Vendas', font=('Arial', 12, 'bold'),
+                                    height=3, width=20, bg='#492884', cursor='hand2',
+                                    activebackground='#71579e', command=janela_consultar_vendas)
+bnt_consultar_vendas.pack(pady=10 )
+
+#inicia a interface
 janela_principal.mainloop()
