@@ -1,3 +1,4 @@
+import re
 import psycopg2
 import tkinter as tk
 from tkinter import messagebox, ttk, StringVar
@@ -9,11 +10,11 @@ conn = psycopg2.connect(host='localhost',port='5432',database='trabalho final',u
 def criar_tabela_clientes():
     cursor = conn.cursor()
     cursor.execute("""
-        DROP TABLE IF EXISTS clientes CASCADE;
-        CREATE TABLE clientes(
+        DROP TABLE IF EXISTS cliente CASCADE;
+        CREATE TABLE cliente(
             id_cliente SERIAL PRIMARY KEY,
             nome VARCHAR(100) NOT NULL,
-            telefone VARCHAR(11) NOT NULL
+            telefone VARCHAR(14) NOT NULL
         );
     """)
     conn.commit()
@@ -22,8 +23,8 @@ def criar_tabela_clientes():
 def criar_tabela_produtos():
     cursor = conn.cursor()
     cursor.execute("""
-        DROP TABLE IF EXISTS produtos CASCADE;
-        CREATE TABLE produtos(
+        DROP TABLE IF EXISTS produto CASCADE;
+        CREATE TABLE produto(
             id_produto SERIAL PRIMARY KEY,
             nome VARCHAR(100) NOT NULL,
             valor_venda DECIMAL(10,2) NOT NULL,
@@ -36,17 +37,17 @@ def criar_tabela_produtos():
 def criar_tabela_vendas():
     cursor = conn.cursor()
     cursor.execute("""
-        DROP TABLE IF EXISTS vendas CASCADE;
-        CREATE TABLE vendas(
+        DROP TABLE IF EXISTS venda CASCADE;
+        CREATE TABLE venda(
             id_venda SERIAL PRIMARY KEY,
             id_cliente INT NOT NULL,
             id_produto INT NOT NULL,
             quantidade INT NOT NULL,
             valor_total DECIMAL(10,2) NOT NULL,
             data_venda DATE NOT NULL,
-            forma_pagamento VARCHAR(20) NOT NULL,
-            FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente),
-            FOREIGN KEY (id_produto) REFERENCES produtos(id_produto)
+            forma_pagamento VARCHAR(20) NOT NULL CHECK(forma_pagamento IN ('dinheiro', 'credito', 'debito')),
+            FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente),
+            FOREIGN KEY (id_produto) REFERENCES produto(id_produto)
         );
     """)
     conn.commit()
@@ -57,35 +58,49 @@ def inserir_cliente():
     nome = nome_cliente_entrada.get()
     telefone = telefone_entrada.get()
     
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO clientes(nome, telefone) VALUES(%s, %s);
-    """, (nome, telefone))
-    conn.commit()
-    cursor.close()
+    # Expressão regular para o formato de telefone (nn)9nnn-nnnn
+    formatoTelefone = re.compile(r"^\(\d{2}\)9\d{3}-\d{4}$")
     
-    nome_cliente_entrada.delete(0, tk.END)
-    telefone_entrada.delete(0, tk.END)
+    # Caso ambos estejam no formato desejado, continuar
+    if nome.isalpha() == True and formatoTelefone.match(telefone):
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO cliente(nome, telefone) VALUES(%s, %s);
+        """, (nome, telefone))
+        conn.commit()
+        cursor.close()
+        
+        nome_cliente_entrada.delete(0, tk.END)
+        telefone_entrada.delete(0, tk.END)
     
-    messagebox.showinfo("Sucesso", "Cliente cadastrado com sucesso!")
+        messagebox.showinfo("Sucesso", "Cliente cadastrado com sucesso!")  
+    else:
+        if nome.isalpha() == False: # Sinalizar erro caso o nome tenham símbolos que não são letras
+            messagebox.showinfo("ERRO", "Nome inválido!")
+        else: # Sinalizar erro caso o telefone inserido não siga o formato
+            messagebox.showinfo("ERRO", "Número inválido!")
+    
 
 def inserir_produto():
     nome = nome_produto_entrada.get()
     valor_venda = valor_entrada.get()
     estoque = estoque_entrada.get()
     
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO produtos(nome, valor_venda, estoque) VALUES(%s, %s, %s);
-    """, (nome, valor_venda, estoque))
-    conn.commit()
-    cursor.close()
-    
-    nome_produto_entrada.delete(0, tk.END)
-    valor_entrada.delete(0, tk.END)
-    estoque_entrada.delete(0, tk.END)
-    
-    messagebox.showinfo("Sucesso", "Produto cadastrado com sucesso!")
+    if nome.isdigit():
+        messagebox.showerror("ERRO","Nome inválido.")
+    else:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO produto(nome, valor_venda, estoque) VALUES(%s, %s, %s);
+        """, (nome, valor_venda, estoque))
+        conn.commit()
+        cursor.close()
+
+        nome_produto_entrada.delete(0, tk.END)
+        valor_entrada.delete(0, tk.END)
+        estoque_entrada.delete(0, tk.END)
+
+        messagebox.showinfo("Sucesso", "Produto cadastrado com sucesso!")
 
 def inserir_venda():
     id_cliente = ID_cliente.get()
@@ -98,7 +113,7 @@ def inserir_venda():
     cursor = conn.cursor()
     try:
         # Verificando se há estoque suficiente
-        cursor.execute("SELECT estoque FROM produtos WHERE id_produto = %s;", (id_produto,))
+        cursor.execute("SELECT estoque FROM produto WHERE id_produto = %s;", (id_produto,))
         estoque_atual = cursor.fetchone()[0]
         if estoque_atual < quantidade:
             messagebox.showerror("Erro", "Estoque insuficiente para realizar a venda.")
@@ -106,12 +121,12 @@ def inserir_venda():
 
         # Inserindo a venda
         cursor.execute("""
-            INSERT INTO vendas(id_cliente, id_produto, quantidade, valor_total, data_venda, forma_pagamento) VALUES(%s, %s, %s, %s, %s, %s);
+            INSERT INTO venda(id_cliente, id_produto, quantidade, valor_total, data_venda, forma_pagamento) VALUES(%s, %s, %s, %s, %s, %s);
         """, (id_cliente, id_produto, quantidade, valor_total, data_venda, forma_pagamento))
 
         # Atualizando o estoque
         cursor.execute("""
-            UPDATE produtos SET estoque = estoque - %s WHERE id_produto = %s;
+            UPDATE produto SET estoque = estoque - %s WHERE id_produto = %s;
         """, (quantidade, id_produto))
 
         conn.commit()
@@ -135,7 +150,7 @@ def atualizar_estoque():
 
     cursor = conn.cursor()
     cursor.execute("""
-        UPDATE produtos SET estoque = estoque + %s WHERE id_produto = %s;
+        UPDATE produto SET estoque = estoque + %s WHERE id_produto = %s;
     """, (input_estoque, id_produto))
     conn.commit()
     cursor.close()
@@ -150,7 +165,7 @@ def atualizar_estoque():
 def mostrar_clientes():
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT * FROM clientes;
+        SELECT * FROM cliente;
     """)
     clientes = cursor.fetchall()
     cursor.close()
@@ -159,7 +174,7 @@ def mostrar_clientes():
 def mostrar_produtos():
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT * FROM produtos;
+        SELECT * FROM produto;
     """)
     produtos = cursor.fetchall()
     cursor.close()
@@ -168,7 +183,7 @@ def mostrar_produtos():
 def mostrar_vendas():
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT * FROM vendas;
+        SELECT * FROM venda;
     """)
     vendas = cursor.fetchall()
     cursor.close()
