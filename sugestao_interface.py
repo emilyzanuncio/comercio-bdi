@@ -58,8 +58,8 @@ def inserir_cliente():
     nome = nome_cliente_entrada.get()
     telefone = telefone_entrada.get()
     
-    # Expressão regular para o formato de telefone (nn)9nnn-nnnn
-    formatoTelefone = re.compile(r"^\(\d{2}\)9\d{3}-\d{4}$")
+    # Expressão regular para o formato de telefone (nn)9nnnn-nnnn
+    formatoTelefone = re.compile(r"\(\d{2}\)9\d{4}-\d{4}$")
     
     # Caso ambos estejam no formato desejado, continuar
     if nome.isalpha() == True and formatoTelefone.match(telefone):
