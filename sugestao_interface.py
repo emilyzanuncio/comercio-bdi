@@ -76,9 +76,9 @@ def inserir_cliente():
         messagebox.showinfo("Sucesso", "Cliente cadastrado com sucesso!")  
     else:
         if nome.isalpha() == False: # Sinalizar erro caso o nome tenham símbolos que não são letras
-            messagebox.showinfo("ERRO", "Nome inválido!")
+            messagebox.showerror("ERRO", "Nome inválido!")
         else: # Sinalizar erro caso o telefone inserido não siga o formato
-            messagebox.showinfo("ERRO", "Número inválido!")
+            messagebox.showerror("ERRO", "Número inválido!")
     
 
 def inserir_produto():
