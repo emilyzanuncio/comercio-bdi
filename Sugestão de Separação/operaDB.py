@@ -12,8 +12,8 @@ def inserirCliente(clienteInfo):
     nomeCliente = nomeCliente.get()
     telCliente = telCliente.get()
     
-    # Expressão regular para o formato de telefone (nn)9nnnn-nnnn
-    formatoTelefone = re.compile(r"\(\d{2}\)9\d{4}\d{4}$")
+    # Expressão regular para o formato de telefone 9nnnnnnnn
+    #formatoTelefone = re.compile(r"\(\d{2}\)9\d{4}\d{4}$")
     formatoTelefone = re.compile(r"9\d{8}$")
     
     # Caso ambos estejam no formato desejado, continuar
@@ -66,7 +66,7 @@ def inserirVenda(vendaInfo):
         cursor.execute("SELECT estoque FROM produto WHERE id_produto = %s;", (codProduto,))
         estoque_atual = cursor.fetchone()[0]
         if estoque_atual < quantidade:
-            messagebox.showerror("Erro", "Estoque insuficiente para realizar a venda.")
+            messagebox.showerror("Erro", "Produto fora de estoque.")
             return
 
         # Inserindo a venda
