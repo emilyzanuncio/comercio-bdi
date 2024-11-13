@@ -47,9 +47,12 @@ def cadCliente():
     cadastroCliente = tk.Toplevel(janelaPrincipal)
     cadastroCliente.title("Cadastro de Cliente")
     cadastroCliente.geometry('250x230')
+    
+    # Inicializa variáveis de cadastro
     nomeCliente=tk.StringVar()
     telCliente=tk.StringVar()
 
+    # Título e campo de texto para cadastro de cliente
     tk.Label(cadastroCliente,text='Nome',font=('Arial',12)).pack(pady=5)
     entradaNome = tk.Entry(cadastroCliente,width=30,textvariable=nomeCliente)
     entradaNome.pack(pady=5)
@@ -57,8 +60,9 @@ def cadCliente():
     entradaTel = tk.Entry(cadastroCliente,width=30,textvariable=telCliente)
     entradaTel.pack(pady=5)
     
-    # Botões para cadastrar o cliente e outro botão para fechar a janela
     clienteInfo = [nomeCliente, telCliente]
+    
+    # Botões para cadastrar o cliente e outro botão para fechar a janela
     enviar = tk.Button(cadastroCliente,text='Enviar', command=lambda: inserir_cliente(clienteInfo))
     enviar.pack(pady=10)
     tk.Button(cadastroCliente,text='Fechar', command=cadastroCliente.destroy).pack(pady=10)
@@ -70,35 +74,58 @@ def cadProduto():
     cadastroProduto = tk.Toplevel(janelaPrincipal)
     cadastroProduto.title("Cadastro de Produto")
     cadastroProduto.geometry('250x300')
+    
+    # Inicializa variáveis de cadastro
+    prodNome = tk.StringVar()
+    prodValor = tk.StringVar()
+    prodQtd = tk.StringVar()
 
     tk.Label(cadastroProduto,text='Nome do produto',font=('Arial',12)).pack(pady=5)
-    prodNome = tk.Entry(cadastroProduto,width=30).pack(pady=5)
+    nomeCaixa = tk.Entry(cadastroProduto,width=30,textvariable=prodNome)
+    nomeCaixa.pack(pady=5)
     tk.Label(cadastroProduto,text='Preço',font=('Arial',12)).pack(pady=5)
-    entradaVal = tk.Entry(cadastroProduto,width=30).pack(pady=5)
+    valorCaixa = tk.Entry(cadastroProduto,width=30,textvariable=prodValor)
+    valorCaixa.pack(pady=5)
     tk.Label(cadastroProduto,text='Quantidade em estoque',font=('Arial',12)).pack(pady=5)
-    entradaQtd = tk.Entry(cadastroProduto,width=30).pack(pady=5)
+    qtdCaixa = tk.Entry(cadastroProduto,width=30,textvariable=prodQtd)
+    qtdCaixa.pack(pady=5)
+    
+    produtoInfo = [prodNome,prodValor,prodQtd]
+    
     # Botões para cadastrar o cliente e outro botão para fechar a janela
-    tk.Button(cadastroProduto,text='Enviar', command=inserir_produto).pack(pady=10)
+    enviar = tk.Button(cadastroProduto,text='Enviar', command=lambda: inserir_produto(produtoInfo))
+    enviar.pack(pady=10)
     tk.Button(cadastroProduto,text='Fechar', command=cadastroProduto.destroy).pack(pady=10)
     
     cadastroProduto.mainloop()
 
 def cadVenda():
+    # =============================
+    # CONSERTAR COM BASE NO ANTERIOR
+    # =============================
     global janelaPrincipal,cadastroVenda, codCliente, codProduto, qtdSelecionada, total, data, formaPagamento
     cadastroVenda = tk.Toplevel(janelaPrincipal)
     cadastroVenda.title("Cadastro de Vendas")
     cadastroVenda.geometry('300x500')
+    
+    # Inicializa variáveis de cadastro
+    codCliente = tk.StringVar()
+    codProduto = tk.StringVar()
+    qtd = tk.StringVar()
+    total = tk.StringVar()
+    data = tk.StringVar()
+    #pagamentoSlc = tk.StringVar
 
     tk.Label(cadastroVenda,text='Código do Cliente',font=('Arial',12)).pack(pady=5)
-    codCliente = tk.Entry(cadastroVenda,width=30).pack(pady=5)
+    clienteID = tk.Entry(cadastroVenda,width=30,textvariable=codCliente).pack(pady=5)
     tk.Label(cadastroVenda,text='Código do Produto',font=('Arial',12)).pack(pady=5)
-    codProduto = tk.Entry(cadastroVenda,width=30).pack(pady=5)
+    produtoID = tk.Entry(cadastroVenda,width=30,textvariable=codProduto).pack(pady=5)
     tk.Label(cadastroVenda,text='Quantidade selecionada',font=('Arial',12)).pack(pady=5)
-    qtdSelecionada = tk.Entry(cadastroVenda,width=30).pack(pady=5)
+    qtdSelecionada = tk.Entry(cadastroVenda,width=30,textvariable=qtd).pack(pady=5)
     tk.Label(cadastroVenda,text='Valor total da compra',font=('Arial',12)).pack(pady=5)
-    total = tk.Entry(cadastroVenda,width=30).pack(pady=5)
+    totalVenda = tk.Entry(cadastroVenda,width=30,textvariable=total).pack(pady=5)
     tk.Label(cadastroVenda,text='Data da Venda (DD/MM/AA)',font=('Arial',12)).pack(pady=5)
-    data = tk.Entry(cadastroVenda,width=30).pack(pady=5)
+    dataVenda = tk.Entry(cadastroVenda,width=30,textvariable=data).pack(pady=5)
     
     tk.Label(cadastroVenda, text='Forma de pagamento').pack(pady=5)
     formaPagamento = StringVar(cadastroVenda)
@@ -108,8 +135,11 @@ def cadVenda():
     menu_opcoes = tk.OptionMenu(cadastroVenda, formaPagamento, *opcoes)
     menu_opcoes.pack(pady=10)
     
+    vendaInfo = [codCliente, codProduto, qtd, total, data, formaPagamento]
+    
     # Botões para cadastrar o cliente e outro botão para fechar a janela
-    tk.Button(cadastroVenda,text='Enviar', command=inserir_venda).pack(pady=10)
+    enviar = tk.Button(cadastroVenda,text='Enviar', command=lambda: inserir_venda(vendaInfo))
+    enviar.pack(pady=10)
     tk.Button(cadastroVenda,text='Fechar', command=cadastroVenda.destroy).pack(pady=10)
     
     cadastroVenda.mainloop()
