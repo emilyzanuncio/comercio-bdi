@@ -6,7 +6,7 @@ from tkinter import messagebox, ttk, StringVar
 
 conn = psycopg2.connect(host='localhost',port='5432',database='trabalho final',user='postgres',password='Aquaphor')
 
-def inserir_cliente(clienteInfo):
+def inserirCliente(clienteInfo):
     # Passa os valores do array para as variáveis
     nomeCliente, telCliente = clienteInfo
     nomeCliente = nomeCliente.get()
@@ -32,7 +32,7 @@ def inserir_cliente(clienteInfo):
         else: # Sinalizar erro caso o telefone inserido não siga o formato
             messagebox.showerror("ERRO", "Número inválido!")
             
-def inserir_produto(produtoInfo):
+def inserirProduto(produtoInfo):
     nome, valor, estoque = produtoInfo
     nome = nome.get()
     valor = valor.get()
@@ -51,7 +51,7 @@ def inserir_produto(produtoInfo):
 
         messagebox.showinfo("Sucesso", "Produto cadastrado com sucesso!")
 
-def inserir_venda(vendaInfo):
+def inserirVenda(vendaInfo):
     codCliente, codProduto, quantidade, total, data, formaPagamento = vendaInfo
     codCliente = codCliente.get()
     codProduto = codProduto.get()
@@ -93,3 +93,52 @@ def inserir_venda(vendaInfo):
     #total.delete(0, tk.END)
     #data.delete(0, tk.END)
     #formaPagamento.set('Escolha uma opção')
+
+def atualizarEstoque(atualizaInfo):
+    codProduto, qtdAdicionada = atualizaInfo
+    codProduto = int(codProduto.get())
+    qtdAdicionada = int(qtdAdicionada.get())
+    
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE produto SET estoque = estoque + %s WHERE id_produto = %s;
+    """, (qtdAdicionada, codProduto))
+    conn.commit()
+    cursor.close()
+    
+    messagebox.showinfo("Sucesso", "Estoque atualizado com sucesso!")
+
+def mostrarClientes():
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM cliente;
+    """)
+    clientes = cursor.fetchall()
+    cursor.close()
+    return clientes
+
+def mostrarProdutos():
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM produto;
+    """)
+    produtos = cursor.fetchall()
+    cursor.close()
+    return produtos
+
+def mostrarVendas(codRelatorio):
+    cursor = conn.cursor()
+    if codRelatorio == 0:
+        cursor.execute("""
+            SELECT COUNT(id_venda) AS total_vendas_UCDBuy FROM venda;
+        """)
+        qtdVendas = cursor.fetchall()
+        cursor.close()
+        return qtdVendas
+    if codRelatorio == 1:
+        cursor.execute("""
+            SELECT COUNT(id_venda) FROM venda GROUP BY id_cliente;
+        """)
+        vendas = cursor.fetchall()
+        cursor.close()
+        return vendas    

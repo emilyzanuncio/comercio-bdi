@@ -3,7 +3,7 @@ import psycopg2
 import tkinter as tk
 from tkinter import messagebox, ttk, StringVar
 from criaTabela import criar_tabela_clientes, criar_tabela_produtos, criar_tabela_vendas
-from operaDB import inserir_cliente, inserir_produto, inserir_venda
+from operaDB import inserirCliente, inserirProduto, inserirVenda, atualizarEstoque, mostrarClientes, mostrarProdutos, mostrarVendas
 
 conn = psycopg2.connect(host='localhost',port='5432',database='trabalho final',user='postgres',password='Aquaphor')
 
@@ -33,7 +33,7 @@ def menuPrincipal(controller):
     tk.Button(janelaPrincipal,text='Consultar Clientes', fg='#FFFFFF', font=('Arial',12,'bold'),
               height=3, width=20, bg='#492884', cursor='hand2',
               activebackground='#71579e', command=buscaCliente).grid(row=5,column=0,padx=50,pady=5)
-    tk.Button(janelaPrincipal,text='Consultar Estoque', fg='#FFFFFF', font=('Arial',12,'bold'),
+    tk.Button(janelaPrincipal,text='Consultar Produtos', fg='#FFFFFF', font=('Arial',12,'bold'),
               height=3, width=20, bg='#492884', cursor='hand2',
               activebackground='#71579e', command=buscaProduto).grid(row=6,column=0,padx=50,pady=5)
     tk.Button(janelaPrincipal,text='Relatórios de Vendas', fg='#FFFFFF', font=('Arial',12,'bold'),
@@ -63,7 +63,7 @@ def cadCliente():
     clienteInfo = [nomeCliente, telCliente]
     
     # Botões para cadastrar o cliente e outro botão para fechar a janela
-    enviar = tk.Button(cadastroCliente,text='Enviar', command=lambda: inserir_cliente(clienteInfo))
+    enviar = tk.Button(cadastroCliente,text='Enviar', command=lambda: inserirCliente(clienteInfo))
     enviar.pack(pady=10)
     tk.Button(cadastroCliente,text='Fechar', command=cadastroCliente.destroy).pack(pady=10)
     
@@ -93,7 +93,7 @@ def cadProduto():
     produtoInfo = [prodNome,prodValor,prodQtd]
     
     # Botões para cadastrar o cliente e outro botão para fechar a janela
-    enviar = tk.Button(cadastroProduto,text='Enviar', command=lambda: inserir_produto(produtoInfo))
+    enviar = tk.Button(cadastroProduto,text='Enviar', command=lambda: inserirProduto(produtoInfo))
     enviar.pack(pady=10)
     tk.Button(cadastroProduto,text='Fechar', command=cadastroProduto.destroy).pack(pady=10)
     
@@ -138,24 +138,32 @@ def cadVenda():
     vendaInfo = [codCliente, codProduto, qtd, total, data, formaPagamento]
     
     # Botões para cadastrar o cliente e outro botão para fechar a janela
-    enviar = tk.Button(cadastroVenda,text='Enviar', command=lambda: inserir_venda(vendaInfo))
+    enviar = tk.Button(cadastroVenda,text='Enviar', command=lambda: inserirVenda(vendaInfo))
     enviar.pack(pady=10)
     tk.Button(cadastroVenda,text='Fechar', command=cadastroVenda.destroy).pack(pady=10)
     
     cadastroVenda.mainloop()
 
 def attEstoque():
-    global janelaPrincipal, atualizaEstoque, codProduto, novaQtd
+    global janelaPrincipal, atualizaEstoque, codProduto, qtdAdicionada
     atualizaEstoque = tk.Toplevel(janelaPrincipal)
     atualizaEstoque.title("Atualizar Estoque")
     atualizaEstoque.geometry('250x230')
+    
+    #codProduto = tk.StringVar()
+    #qtdAdicionada = tk.StringVar()
 
     tk.Label(atualizaEstoque,text='ID produto',font=('Arial',12)).pack(pady=5)
-    codProduto = tk.Entry(atualizaEstoque,width=30).pack(pady=5)
+    codProduto = tk.Entry(atualizaEstoque,width=30)
+    codProduto.pack(pady=5)
     tk.Label(atualizaEstoque,text='Quantidade',font=('Arial',12)).pack(pady=5)
-    novaQtd = tk.Entry(atualizaEstoque,width=30).pack(pady=5)
+    qtdAdicionada = tk.Entry(atualizaEstoque,width=30)
+    qtdAdicionada.pack(pady=5)
+    
+    atualizaInfo = [codProduto, qtdAdicionada]
+    
     # Botões para cadastrar o cliente e outro botão para fechar a janela
-    tk.Button(atualizaEstoque,text='Enviar', command=PLACEHOLDER).pack(pady=10)
+    tk.Button(atualizaEstoque,text='Enviar', command=lambda: atualizarEstoque(atualizaInfo)).pack(pady=10)
     tk.Button(atualizaEstoque,text='Fechar', command=atualizaEstoque.destroy).pack(pady=10)
     
     atualizaEstoque.mainloop()
@@ -163,7 +171,7 @@ def attEstoque():
 def buscaCliente():
     global janelaPrincipal, consultaCliente
     consultaCliente = tk.Toplevel(janelaPrincipal)
-    consultaCliente.title("Cadastro de Cliente")
+    consultaCliente.title("Consulta Clientes")
     consultaCliente.geometry('400x300')
     tabela = ttk.Treeview(consultaCliente, columns=('Nome', 'Telefone'))
     tabela.heading('#0', text='ID')
@@ -174,51 +182,76 @@ def buscaCliente():
     tabela.column('#2', width=100)
     tabela.pack(fill='both', expand=True)
     
-    # ==========
-    # TERMINAR
-    # ==========
+    clientes = mostrarClientes()
     
-    consultaCliente.mainloop()
+    for cliente in clientes:
+        tabela.insert('', 'end', text=cliente[0], values=(cliente[1], cliente[2]))
+    
+    fechar_btn = tk.Button(consultaCliente, text='Fechar', command=consultaCliente.destroy)
+    fechar_btn.pack(pady=10)
+    #consultaCliente.mainloop()
 
 def buscaProduto():
     global janelaPrincipal, consultaEstoque
     consultaEstoque = tk.Toplevel(janelaPrincipal)
-    consultaEstoque.title("Cadastro de Cliente")
+    consultaEstoque.title("Consulta Produto")
     consultaEstoque.geometry('400x300')
-    tabela = ttk.Treeview(consultaEstoque, columns=('Nome', 'Telefone'))
+    
+    tabela = ttk.Treeview(consultaEstoque, columns=('Nome', 'Valor', 'Estoque'))
     tabela.heading('#0', text='ID')
     tabela.heading('#1', text='Nome')
-    tabela.heading('#2', text='Telefone')
+    tabela.heading('#2', text='Valor')
+    tabela.heading('#3', text='Estoque')
     tabela.column('#0', width=50)
-    tabela.column('#1', width=150)
+    tabela.column('#1', width=100)
     tabela.column('#2', width=100)
+    tabela.column('#3', width=100)
     tabela.pack(fill='both', expand=True)
     
-    # ==========
-    # TERMINAR
-    # ==========
+    produtos = mostrarProdutos()
     
-    consultaEstoque.mainloop()
+    for produto in produtos:
+        tabela.insert('', 'end', text=produto[0], values=(produto[1], produto[2], produto[3]))
+    
+    fechar_btn = tk.Button(consultaEstoque, text='Fechar', command=consultaEstoque.destroy)
+    fechar_btn.pack(pady=10)
+    #consultaEstoque.mainloop()
 
 def buscaVenda():
     global janelaPrincipal, consultaVenda
     consultaVenda = tk.Toplevel(janelaPrincipal)
-    consultaVenda.title("Cadastro de Cliente")
+    consultaVenda.title("Consulta Vendas")
     consultaVenda.geometry('400x300')
-    tabela = ttk.Treeview(consultaVenda, columns=('Nome', 'Telefone'))
+    
+    vendasTotais = mostrarVendas(0)
+    
+    tk.Label(janelaPrincipal,text="Vendas", font=('Arial',14,'bold'), bg='#cca7dd').pack(pady=10)
+    tk.Label(consultaVenda, text=("Total de vendas: ", vendasTotais), font=('Arial',14,'bold'), bg='#cca7dd').pack(pady=10)
+    tabela = ttk.Treeview(consultaVenda, columns=('ID Cliente', 'ID Produto', 'Quantidade', 'Valor Total', 'Data Venda', 'Forma Pagamento'))
     tabela.heading('#0', text='ID')
-    tabela.heading('#1', text='Nome')
-    tabela.heading('#2', text='Telefone')
+    tabela.heading('#1', text='ID Cliente')
+    tabela.heading('#2', text='ID Produto')
+    tabela.heading('#3', text='Quantidade')
+    tabela.heading('#4', text='Valor Total')
+    tabela.heading('#5', text='Data Venda')
+    tabela.heading('#6', text='Forma Pagamento')
     tabela.column('#0', width=50)
-    tabela.column('#1', width=150)
+    tabela.column('#1', width=100)
     tabela.column('#2', width=100)
+    tabela.column('#3', width=100)
+    tabela.column('#4', width=100)
+    tabela.column('#5', width=100)
+    tabela.column('#6', width=120)
     tabela.pack(fill='both', expand=True)
     
-    # ==========
-    # TERMINAR
-    # ==========
+    vendas = mostrarVendas(1)
     
-    consultaVenda.mainloop()
+    for venda in vendas:
+        tabela.insert('','end',text=venda[0], values=(venda[1],venda[2],venda[3],venda[4],venda[5],venda[6]))
+    
+    fechar_btn = tk.Button(consultaVenda, text='Fechar', command=consultaVenda.destroy)
+    fechar_btn.pack(pady=10)
+    #consultaVenda.mainloop()
 
 def PLACEHOLDER():
     print("MEOWWW")
