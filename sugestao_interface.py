@@ -79,13 +79,13 @@ def inserir_cliente():
             messagebox.showerror("ERRO", "Nome inválido!")
         else: # Sinalizar erro caso o telefone inserido não siga o formato
             messagebox.showerror("ERRO", "Número inválido!")
-    
 
 def inserir_produto():
     nome = nome_produto_entrada.get()
     valor_venda = valor_entrada.get()
     estoque = estoque_entrada.get()
     
+    # Sinalizar erro em caso de nome numérico 
     if nome.isdigit():
         messagebox.showerror("ERRO","Nome inválido.")
     else:
@@ -159,7 +159,6 @@ def atualizar_estoque():
     entrada_estoque.delete(0, tk.END)
     
     messagebox.showinfo("Sucesso", "Estoque atualizado com sucesso!")
-
 
 # Mostrando todos clientes cadastrados
 def mostrar_clientes():
