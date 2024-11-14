@@ -2,6 +2,8 @@ import re
 import psycopg2
 import tkinter as tk
 from tkinter import messagebox, ttk, StringVar
+
+#Importando funções de outros arquivos
 from criaTabela import criar_tabela_clientes, criar_tabela_produtos, criar_tabela_vendas
 from operaDB import inserirCliente, inserirProduto, inserirVenda, atualizarEstoque, mostrarClientes, mostrarProdutos, mostrarVendas
 
