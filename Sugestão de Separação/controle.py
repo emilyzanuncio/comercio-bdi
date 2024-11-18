@@ -1,22 +1,21 @@
-import re
 import psycopg2
 import tkinter as tk
 from tkinter import messagebox, ttk, StringVar
 
 #Importando funções de outros arquivos
 from criaTabela import criar_tabela_clientes, criar_tabela_produtos, criar_tabela_vendas
-from operaDB import inserirCliente, inserirProduto, inserirVenda, atualizarEstoque, mostrarClientes, mostrarProdutos, mostrarVendas
+from operaDB import inserirCliente, inserirProduto, inserirVenda, atualizarEstoque, mostrarClientes, mostrarProdutos, mostrarVendas, mostraTodasVendas, BuscarCliente
 
 conn = psycopg2.connect(host='localhost',port='5432',database='trabalho final',user='postgres',password='Aquaphor')
 
 global janelaPrincipal, cadastroCliente, cadastroProduto, cadastroVenda
-global atualizaEstoque, consultaCliente, consultaEstoque, consultaVenda
+global atualizaEstoque, consultaCliente, consultaEstoque, consultaVenda, TodasVendas
 
 def menuPrincipal(controller):
     global janelaPrincipal
     janelaPrincipal = tk.Tk()
     janelaPrincipal.title('Comércio UCDBuy')
-    janelaPrincipal.geometry('300x650')
+    janelaPrincipal.geometry('300x700')
     janelaPrincipal.configure(bg='#cca7dd')
     
     titulo = tk.Label(janelaPrincipal,text="Comércio UCDBuy", font=('Arial',14,'bold'), bg='#cca7dd').grid(row=0,column=0,pady=10)
@@ -29,19 +28,25 @@ def menuPrincipal(controller):
     tk.Button(janelaPrincipal,text='Cadastrar Venda', fg='#FFFFFF', font=('Arial',12,'bold'),
               height=3, width=20, bg='#492884', cursor='hand2',
               activebackground='#71579e', command=cadVenda).grid(row=3,column=0,padx=50,pady=5)
-    tk.Button(janelaPrincipal,text='Atualizar Estoque', fg='#FFFFFF', font=('Arial',12,'bold'),
-              height=3, width=20, bg='#492884', cursor='hand2',
-              activebackground='#71579e', command=attEstoque).grid(row=4,column=0,padx=50,pady=5)
-    tk.Button(janelaPrincipal,text='Consultar Clientes', fg='#FFFFFF', font=('Arial',12,'bold'),
-              height=3, width=20, bg='#492884', cursor='hand2',
-              activebackground='#71579e', command=buscaCliente).grid(row=5,column=0,padx=50,pady=5)
     tk.Button(janelaPrincipal,text='Consultar Produtos', fg='#FFFFFF', font=('Arial',12,'bold'),
               height=3, width=20, bg='#492884', cursor='hand2',
-              activebackground='#71579e', command=buscaProduto).grid(row=6,column=0,padx=50,pady=5)
+              activebackground='#71579e', command=buscaProduto).grid(row=4,column=0,padx=50,pady=5)
+    tk.Button(janelaPrincipal,text='Atualizar Estoque', fg='#FFFFFF', font=('Arial',12,'bold'),
+              height=3, width=20, bg='#492884', cursor='hand2',
+              activebackground='#71579e', command=attEstoque).grid(row=5,column=0,padx=50,pady=5)
+    tk.Button(janelaPrincipal,text='Buscar Cliente', fg='#FFFFFF', font=('Arial',12,'bold'),
+              height=3, width=20, bg='#492884', cursor='hand2',
+              activebackground='#71579e', command=buscaCliente).grid(row=6,column=0,padx=50,pady=5)
+    tk.Button(janelaPrincipal,text='Consultar Clientes', fg='#FFFFFF', font=('Arial',12,'bold'),
+              height=3, width=20, bg='#492884', cursor='hand2',
+              activebackground='#71579e', command=buscaTodosClientes).grid(row=7,column=0,padx=50,pady=5)
     tk.Button(janelaPrincipal,text='Relatórios de Vendas', fg='#FFFFFF', font=('Arial',12,'bold'),
               height=3, width=20, bg='#492884', cursor='hand2',
-              activebackground='#71579e', command=buscaVenda).grid(row=7,column=0,padx=50,pady=5)
-    
+              activebackground='#71579e', command=buscaVenda).grid(row=8,column=0,padx=50,pady=5)
+    tk.Button(janelaPrincipal,text='Informações das Vendas', fg='#FFFFFF', font=('Arial',12,'bold'),
+              height=3, width=20, bg='#492884', cursor='hand2',
+              activebackground='#71579e', command=InfoVendas).grid(row=9,column=0,padx=50,pady=5)
+   
     janelaPrincipal.mainloop()
 
 def cadCliente():
@@ -170,7 +175,7 @@ def attEstoque():
     
     atualizaEstoque.mainloop()
 
-def buscaCliente():
+def buscaTodosClientes():
     global janelaPrincipal, consultaCliente
     consultaCliente = tk.Toplevel(janelaPrincipal)
     consultaCliente.title("Consulta Clientes")
@@ -227,9 +232,33 @@ def buscaVenda():
     
     vendasTotais = mostrarVendas(0)
     
-    tk.Label(janelaPrincipal,text="Vendas", font=('Arial',14,'bold'), bg='#cca7dd').pack(pady=10)
+    tk.Label(consultaVenda,text="Vendas", font=('Arial',14,'bold'), bg='#cca7dd').pack(pady=10)
     tk.Label(consultaVenda, text=("Total de vendas: ", vendasTotais), font=('Arial',14,'bold'), bg='#cca7dd').pack(pady=10)
     tabela = ttk.Treeview(consultaVenda, columns=('ID Cliente', 'ID Produto', 'Quantidade', 'Valor Total', 'Data Venda', 'Forma Pagamento'))
+    tabela.heading('#0', text='ID')
+    tabela.heading('#1', text='ID Cliente')
+    tabela.heading('#2', text='Quantidade Compras')
+    tabela.column('#0', width=50)
+    tabela.column('#1', width=100)
+    tabela.column('#2', width=150)
+    tabela.pack(fill='both', expand=True)
+    
+    vendas = mostrarVendas(1)
+    
+    for venda in vendas:
+        tabela.insert('','end',text=venda[0], values=(venda[1],venda[2]))
+    
+    fechar_btn = tk.Button(consultaVenda, text='Fechar', command=consultaVenda.destroy)
+    fechar_btn.pack(pady=10)
+    #consultaVenda.mainloop()
+
+def InfoVendas():
+    global janelaPrincipal, TodasVendas
+    TodasVendas = tk.Toplevel(janelaPrincipal)
+    TodasVendas.title('Informações das Vendas')
+    TodasVendas.geometry('800x300')
+    
+    tabela = ttk.Treeview(TodasVendas, columns=('ID Cliente', 'ID Produto', 'Quantidade', 'Valor Total', 'Data Venda', 'Forma Pagamento'))
     tabela.heading('#0', text='ID')
     tabela.heading('#1', text='ID Cliente')
     tabela.heading('#2', text='ID Produto')
@@ -246,14 +275,50 @@ def buscaVenda():
     tabela.column('#6', width=120)
     tabela.pack(fill='both', expand=True)
     
-    vendas = mostrarVendas(1)
+    InfoVendas= mostraTodasVendas()
+
+    for venda in InfoVendas:
+        tabela.insert('', 'end', text=venda[0], values=(venda[1], venda[2], venda[3], venda[4], venda[5], venda[6]))
     
-    for venda in vendas:
-        tabela.insert('','end',text=venda[0], values=(venda[1],venda[2],venda[3],venda[4],venda[5],venda[6]))
-    
-    fechar_btn = tk.Button(consultaVenda, text='Fechar', command=consultaVenda.destroy)
+    fechar_btn = tk.Button(TodasVendas, text='Fechar', command=TodasVendas.destroy)
     fechar_btn.pack(pady=10)
-    #consultaVenda.mainloop()
+
+def buscaCliente():
+    global janelaPrincipal, InfoCliente
+    InfoCliente = tk.Toplevel(janelaPrincipal)
+    InfoCliente.title("Consulta Cliente")
+    InfoCliente.geometry('500x300')  
+
+    entrada_id = tk.Entry(InfoCliente)
+    entrada_id.pack(pady=10)
+
+    tabela = ttk.Treeview(InfoCliente, columns=('Nome', 'Telefone', 'Quantidade de Compras'))
+    tabela.heading('#0', text='ID Cliente')
+    tabela.heading('#1', text='Nome')
+    tabela.heading('#2', text='Telefone')
+    tabela.heading('#3', text='Quantidade de Compras')
+    tabela.column('#0', width=100)
+    tabela.column('#1', width=150)
+    tabela.column('#2', width=100)
+    tabela.column('#3', width=150)
+    tabela.pack(fill='both', expand=True)
+
+    def atualizar_tabela():
+        cliente_id = entrada_id.get()
+        cliente = BuscarCliente(cliente_id)  
+        for item in tabela.get_children():  
+            tabela.delete(item)
+        if cliente:
+            tabela.insert('', 'end', text=cliente[0], values=(cliente[1], cliente[2], cliente[3]))
+        else:
+            messagebox.showerror('Erro', 'Cliente não encontrado.')
+            
+    bnt_buscar = tk.Button(InfoCliente, text='Buscar', command=atualizar_tabela)
+    bnt_buscar.pack(pady=10)
+
+    fechar_btn = tk.Button(InfoCliente, text='Fechar', command=InfoCliente.destroy)
+    fechar_btn.pack(pady=10)
+
 
 def PLACEHOLDER():
     print("MEOWWW")
