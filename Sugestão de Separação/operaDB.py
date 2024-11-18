@@ -117,6 +117,20 @@ def mostrarClientes():
     cursor.close()
     return clientes
 
+def BuscarCliente(codCliente):
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT c.id_cliente, c.nome, c.telefone, COUNT(v.id_venda) AS num_vendas
+        FROM cliente c
+        LEFT JOIN venda v ON v.id_cliente = c.id_cliente
+        WHERE c.id_cliente = %s
+        GROUP BY c.id_cliente, c.nome, c.telefone;
+    """, (codCliente,))
+    
+    resultado = cursor.fetchone()  
+    cursor.close()
+    return resultado
+
 def mostrarProdutos():
     cursor = conn.cursor()
     cursor.execute("""
@@ -137,8 +151,20 @@ def mostrarVendas(codRelatorio):
         return qtdVendas
     if codRelatorio == 1:
         cursor.execute("""
-            SELECT COUNT(id_venda) FROM venda GROUP BY id_cliente;
+            SELECT c.id_cliente, c.nome, COUNT(v.id_venda) FROM cliente c
+            JOIN venda v ON v.id_cliente = c.id_cliente
+            GROUP BY c.id_cliente;
         """)
+        #SELECT COUNT(id_venda) FROM venda GROUP BY id_cliente;
         vendas = cursor.fetchall()
         cursor.close()
-        return vendas    
+        return vendas  
+      
+def mostraTodasVendas():
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM venda;
+    """)
+    TodasVendas = cursor.fetchall()
+    cursor.close()
+    return TodasVendas
